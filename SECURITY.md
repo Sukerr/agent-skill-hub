@@ -1,6 +1,6 @@
 # Security
 
-Agent Skill Board is intended for local use on `127.0.0.1`.
+Agent Skill Hub is intended for local use on `127.0.0.1`.
 
 Before publishing a skills folder or screenshots, review for:
 
