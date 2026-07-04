@@ -1,0 +1,10 @@
+{
+  "default_mode": "link",
+  "skills": {
+    "demo-skill": {
+      "visibility": "public",
+      "hosts": ["claude", "codex", "hermes"],
+      "sync": "link"
+    }
+  }
+}
