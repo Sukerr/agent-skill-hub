@@ -1,8 +1,13 @@
 # Agent Skill Board
 
-一个轻量的本地 Agent Skills 看板，用来管理 Claude Code、Codex、Hermes 等工具共享的 `SKILL.md` 技能库。
+一个轻量的本地 Agent Skills 控制台，用来管理 Claude Code、Codex、Hermes 等工具共享的 `SKILL.md` 技能库。
 
-Agent Skill Board 会递归扫描技能目录，把所有 `SKILL.md` 以卡片形式展示出来，并自动识别可能适用的宿主、健康状态、使用状态和标签。它不需要数据库，也不需要前端构建工具，只有一个 Python 标准库脚本。
+它包含两个零依赖 Python 工具：
+
+- `skill_board.py`：本地网页看板，用来浏览、搜索、打标签、查看健康状态。
+- `skillhub.py`：本地共享命令行，用来扫描 skills，并把兼容的 skill 链接或复制到 Claude Code、Codex、Hermes 的目标目录。
+
+整个项目不需要数据库，也不需要前端构建工具。
 
 English documentation is available below.
 
@@ -18,6 +23,7 @@ English documentation is available below.
   - `.usage.json`
 - 支持在网页里给 skill 打标签。
 - 支持从网页打开本地 `SKILL.md` 或所在目录，但只允许打开配置的技能目录内部路径。
+- 支持用 CLI 查看宿主同步状态，并把 skill 链接或复制到指定宿主目录。
 - 提供简单 JSON API，方便本地自动化。
 - 零第三方 Python 依赖。
 
@@ -72,6 +78,52 @@ python3 skill_board.py
 
 看板只会打开 `SKILL_BOARD_SKILLS_DIR` 内部的文件或目录。网页界面不会删除、归档、同步或发布 skill。
 
+## SkillHub 共享 CLI
+
+`skillhub.py` 负责把同一份 `SKILL.md` 技能库分发给不同宿主。它默认从 `~/ai-workspace/shared-skills` 扫描，也可以用 `--source` 或 `SKILLHUB_SOURCE` 指定目录。
+
+扫描技能：
+
+```bash
+python3 skillhub.py --source examples/skills scan
+```
+
+查看某个宿主目录里哪些 skill 已同步：
+
+```bash
+python3 skillhub.py --source examples/skills status \
+  --host claude \
+  --target /tmp/claude-skills
+```
+
+把兼容的 skill 链接到宿主目录：
+
+```bash
+python3 skillhub.py --source examples/skills link \
+  --host claude \
+  --target /tmp/claude-skills \
+  --mode link
+```
+
+使用复制模式：
+
+```bash
+python3 skillhub.py --source examples/skills link \
+  --host codex \
+  --project /path/to/project \
+  --mode copy
+```
+
+默认宿主目录：
+
+| 宿主 | 默认目标 |
+| --- | --- |
+| Claude Code | `~/.claude/skills` |
+| Hermes | `~/.hermes/skills` |
+| Codex | `<project>/.agents/skills` |
+
+可选 `.skillhub.json` 清单可以覆盖单个 skill 的宿主兼容性、可见性和同步方式。参考 `.skillhub.example.json`。
+
 ## API
 
 ```text
@@ -106,7 +158,7 @@ POST /api/open
 
 ## 同步脚本模板
 
-`scripts/` 目录里有可选的同步脚本模板，可以把技能目录同步到另一个本地目录或 iCloud 目录。使用前请先按自己的环境检查和修改。
+`scripts/` 目录里有可选的同步脚本模板，可以把技能目录同步到另一个本地目录或 iCloud 目录。`skillhub.py` 处理本机宿主分发，脚本模板处理目录级备份/分发；使用前请先按自己的环境检查和修改。
 
 ## 安全提醒
 
@@ -120,11 +172,14 @@ MIT
 
 ## English
 
-A tiny local dashboard for managing Agent Skills across tools such as Claude Code, Codex, and Hermes.
+A tiny local Agent Skills console for sharing `SKILL.md` folders across tools such as Claude Code, Codex, and Hermes.
 
-Agent Skill Board scans a folder of `SKILL.md` files, shows them as searchable cards, detects likely host compatibility, surfaces health and usage metadata, and lets you tag skills without introducing a database or frontend build step.
+It includes two zero-dependency Python tools:
 
-It is a single Python standard-library app.
+- `skill_board.py`: a local web dashboard for browsing, searching, tagging, and checking skill health.
+- `skillhub.py`: a local CLI for scanning skills and linking or copying compatible skills into Claude Code, Codex, or Hermes targets.
+
+No database or frontend build step is required.
 
 ## Features
 
@@ -137,6 +192,7 @@ It is a single Python standard-library app.
   - `.skill-desc-zh.json`
   - `.usage.json`
 - Supports local-only open actions for files and directories inside the configured skills folder.
+- Includes a CLI for host sync status and link/copy distribution.
 - Exposes small JSON APIs for local automation.
 - Requires no third-party Python packages.
 
@@ -191,6 +247,52 @@ Tags are written back to `.skill-tags.json` when edited in the UI.
 
 The app only opens files/directories inside `SKILL_BOARD_SKILLS_DIR`. It does not delete, archive, publish, or sync skills from the web UI.
 
+## SkillHub CLI
+
+`skillhub.py` distributes the same `SKILL.md` source folder to multiple local agent hosts. It scans `~/ai-workspace/shared-skills` by default; use `--source` or `SKILLHUB_SOURCE` to override it.
+
+Scan skills:
+
+```bash
+python3 skillhub.py --source examples/skills scan
+```
+
+Check sync status for a host target:
+
+```bash
+python3 skillhub.py --source examples/skills status \
+  --host claude \
+  --target /tmp/claude-skills
+```
+
+Link compatible skills into a host target:
+
+```bash
+python3 skillhub.py --source examples/skills link \
+  --host claude \
+  --target /tmp/claude-skills \
+  --mode link
+```
+
+Copy instead of symlinking:
+
+```bash
+python3 skillhub.py --source examples/skills link \
+  --host codex \
+  --project /path/to/project \
+  --mode copy
+```
+
+Default host targets:
+
+| Host | Default target |
+| --- | --- |
+| Claude Code | `~/.claude/skills` |
+| Hermes | `~/.hermes/skills` |
+| Codex | `<project>/.agents/skills` |
+
+An optional `.skillhub.json` manifest can override per-skill host compatibility, visibility, and sync mode. See `.skillhub.example.json`.
+
 ## API
 
 ```text
@@ -225,7 +327,7 @@ See `examples/skills/demo-skill/SKILL.md`.
 
 ## Sync Templates
 
-The `scripts/` folder contains optional templates for syncing a skills folder to another local folder or iCloud-backed folder. Review and edit them before use.
+The `scripts/` folder contains optional templates for syncing a skills folder to another local folder or iCloud-backed folder. `skillhub.py` handles local host distribution; the scripts are for folder-level backup/distribution. Review and edit them before use.
 
 ## Security Notes
 
